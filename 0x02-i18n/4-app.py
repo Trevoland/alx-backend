@@ -2,11 +2,21 @@
 ''' Basic Flask app and Babel setup, Get Locale from request
 Parameterized templates, Force locale with URL parameter '''
 
-from flask import Flask, render_template, request
+from typing import Union
+from flask import Flask, render_template, request, g
+from os import getenv
 from flask_babel import Babel
 
 app = Flask(__name__)
 babel = Babel(app)
+
+
+users = {
+    1: {"name": "Balou", "locale": "fr", "timezone": "Europe/Paris"},
+    2: {"name": "Beyonce", "locale": "en", "timezone": "US/Central"},
+    3: {"name": "Spock", "locale": "kg", "timezone": "Vulcan"},
+    4: {"name": "Teletubby", "locale": None, "timezone": "Europe/London"},
+}
 
 
 class Config:
@@ -16,7 +26,13 @@ class Config:
     BABEL_DEFAULT_TIMEZONE = "UTC"
 
 
-app.config.from_object('4-app.Config')
+app.config.from_object('5-app.Config')
+
+
+@app.before_request
+def before_request():
+    ''' Function before request '''
+    g.user = get_user()
 
 
 @babel.localeselector
@@ -31,7 +47,17 @@ def get_locale() -> str:
 @app.route("/", methods=["GET"], strict_slashes=False)
 def hello_world() -> str:
     ''' Output templates '''
-    return render_template('4-index.html')
+    return render_template('5-index.html')
+
+
+def get_user() -> Union[dict, None]:
+    ''' Returns a user dictionary or None '''
+    if request.args.get('login_as'):
+        user = int(request.args.get('login_as'))
+        if user in users:
+            return users.get(user)
+    else:
+        return None
 
 
 if __name__ == '__main__':
